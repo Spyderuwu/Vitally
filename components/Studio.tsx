@@ -81,7 +81,7 @@ export default function Studio() {
   });
 
   const light = useControls("Light", {
-    cursorSun: { value: false, label: "cursor is sun" },
+    cursorSun: { value: true, label: "cursor is sun" },
     sunAzimuth: { value: 140, min: 0, max: 360, step: 1, label: "sun azimuth" },
     sunElevation: { value: 26, min: 4, max: 85, step: 1, label: "sun elevation" },
     sunIntensity: { value: 2.0, min: 0, max: 6, step: 0.05, label: "sun strength" },
