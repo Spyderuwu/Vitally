@@ -30,7 +30,9 @@ function Paint({ s }: { s: PaintSettings }) {
 // Exposes the canvas to the export buttons.
 function GlGrabber({ onGl }: { onGl: (gl: THREE.WebGLRenderer) => void }) {
   const { gl } = useThree();
-  useEffect(() => onGl(gl), [gl, onGl]);
+  useEffect(() => {
+    onGl(gl);
+  }, [gl, onGl]);
   return null;
 }
 
