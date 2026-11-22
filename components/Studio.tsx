@@ -1,0 +1,186 @@
+"use client";
+
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
+import { Canvas, useThree } from "@react-three/fiber";
+import { EffectComposer } from "@react-three/postprocessing";
+import { Leva, button, folder, useControls } from "leva";
+import { ChessScene, SceneSettings } from "./ChessScene";
+import { PaintEffect } from "@/lib/PaintEffect";
+import { paintUniforms } from "@/lib/painterlyMaterial";
+import { DEFAULT_PALETTE, PRESETS, Palette, PaletteKey } from "@/lib/palette";
+
+type PaintSettings = { radius: number; lens: number; paper: number; vignette: number };
+
+function Paint({ s }: { s: PaintSettings }) {
+  const effect = useMemo(() => new PaintEffect(), []);
+  useEffect(() => {
+    effect.uniforms.get("uRadius")!.value = s.radius;
+    effect.uniforms.get("uLens")!.value = s.lens;
+    effect.uniforms.get("uPaper")!.value = s.paper;
+    effect.uniforms.get("uVignette")!.value = s.vignette;
+  }, [effect, s]);
+  return (
+    <EffectComposer multisampling={4}>
+      <primitive object={effect} dispose={null} />
+    </EffectComposer>
+  );
+}
+
+// Exposes the canvas to the export buttons.
+function GlGrabber({ onGl }: { onGl: (gl: THREE.WebGLRenderer) => void }) {
+  const { gl } = useThree();
+  useEffect(() => onGl(gl), [gl, onGl]);
+  return null;
+}
+
+function download(url: string, name: string) {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+}
+
+export default function Studio() {
+  const [embed, setEmbed] = useState(false);
+  useEffect(() => {
+    setEmbed(new URLSearchParams(window.location.search).has("embed"));
+  }, []);
+
+  const glRef = useRef<THREE.WebGLRenderer | null>(null);
+  const [recording, setRecording] = useState(false);
+
+  const [pal, setPal] = useControls(
+    "Palette",
+    () => ({
+      sky: DEFAULT_PALETTE.sky,
+      haze: DEFAULT_PALETTE.haze,
+      boardLight: { value: DEFAULT_PALETTE.boardLight, label: "board light" },
+      boardDark: { value: DEFAULT_PALETTE.boardDark, label: "board dark" },
+      piece: DEFAULT_PALETTE.piece,
+      suit: DEFAULT_PALETTE.suit,
+      skin: DEFAULT_PALETTE.skin,
+      hair: DEFAULT_PALETTE.hair,
+      shoes: DEFAULT_PALETTE.shoes,
+      briefcase: DEFAULT_PALETTE.briefcase,
+      binoculars: DEFAULT_PALETTE.binoculars,
+      shadow: { value: DEFAULT_PALETTE.shadow, label: "shadow tint" },
+    }),
+    { collapsed: false }
+  );
+
+  useControls("Palette", {
+    presets: folder(
+      Object.fromEntries(
+        Object.entries(PRESETS).map(([name, p]) => [name, button(() => setPal(p as Partial<Palette>))])
+      ),
+      { collapsed: true }
+    ),
+  });
+
+  const light = useControls("Light", {
+    cursorSun: { value: false, label: "cursor is sun" },
+    sunAzimuth: { value: 140, min: 0, max: 360, step: 1, label: "sun azimuth" },
+    sunElevation: { value: 26, min: 4, max: 85, step: 1, label: "sun elevation" },
+    sunIntensity: { value: 2.0, min: 0, max: 6, step: 0.05, label: "sun strength" },
+    ambient: { value: 1.7, min: 0, max: 3, step: 0.05, label: "sky fill" },
+    shadowSoftness: { value: 6, min: 1, max: 16, step: 1, label: "shadow softness" },
+  });
+
+  const paint = useControls("Paint", {
+    rampSoftness: { value: 0.2, min: 0.02, max: 0.48, step: 0.01, label: "light falloff" },
+    grain: { value: 0.22, min: 0, max: 0.8, step: 0.01, label: "surface grain" },
+    grainScale: { value: 9, min: 1, max: 40, step: 0.5, label: "grain scale" },
+    radius: { value: 4, min: 0, max: 6, step: 1, label: "brush size" },
+    paper: { value: 0.06, min: 0, max: 0.3, step: 0.005, label: "paper tooth" },
+    vignette: { value: 0.35, min: 0, max: 1, step: 0.01 },
+    lens: { value: 0.18, min: 0, max: 0.8, step: 0.01, label: "lens bend" },
+    square: { value: 1.6, min: 0.4, max: 6, step: 0.05, label: "board square (m)" },
+  });
+
+  const motion = useControls("Motion", {
+    idle: { value: true, label: "idle loop" },
+    loopSeconds: { value: 4, options: { "4 s": 4, "6 s": 6, "8 s": 8 }, label: "loop length" },
+  });
+
+  useEffect(() => {
+    paintUniforms.uGrain.value = paint.grain;
+    paintUniforms.uGrainScale.value = paint.grainScale;
+    paintUniforms.uSquare.value = paint.square;
+  }, [paint.grain, paint.grainScale, paint.square]);
+
+  useControls(
+    "Export",
+    {
+      "Save still (PNG)": button(() => {
+        const gl = glRef.current;
+        if (!gl) return;
+        download(gl.domElement.toDataURL("image/png"), "explorer-chess.png");
+      }),
+      "Record one loop (WebM)": button(() => {
+        const gl = glRef.current;
+        if (!gl || recording) return;
+        const stream = gl.domElement.captureStream(60);
+        const rec = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp9", videoBitsPerSecond: 16_000_000 });
+        const chunks: Blob[] = [];
+        rec.ondataavailable = (e) => chunks.push(e.data);
+        rec.onstop = () => {
+          setRecording(false);
+          download(URL.createObjectURL(new Blob(chunks, { type: "video/webm" })), "explorer-chess-loop.webm");
+        };
+        setRecording(true);
+        rec.start();
+        setTimeout(() => rec.stop(), (motion.loopSeconds as number) * 1000);
+      }),
+    },
+    { collapsed: true },
+    [motion.loopSeconds, recording]
+  );
+
+  const settings: SceneSettings = {
+    palette: pal as unknown as Palette,
+    sunAzimuth: light.sunAzimuth,
+    sunElevation: light.sunElevation,
+    sunIntensity: light.sunIntensity,
+    ambient: light.ambient,
+    shadowSoftness: light.shadowSoftness,
+    rampSoftness: paint.rampSoftness,
+    idle: motion.idle,
+    loopSeconds: motion.loopSeconds as number,
+    cursorSun: embed || light.cursorSun,
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: (pal as Record<PaletteKey, string>).sky }}>
+      <Leva hidden={embed} collapsed={false} titleBar={{ title: "Explorer · studio" }} />
+      <Canvas
+        shadows
+        dpr={[1, 2]}
+        gl={{ preserveDrawingBuffer: true, antialias: true, toneMapping: THREE.NoToneMapping }}
+        camera={{ fov: 50, position: [0, 2, 6] }}
+      >
+        <GlGrabber onGl={(gl) => (glRef.current = gl)} />
+        <Suspense fallback={null}>
+          <ChessScene settings={settings} />
+        </Suspense>
+        <Paint s={{ radius: paint.radius, lens: paint.lens, paper: paint.paper, vignette: paint.vignette }} />
+      </Canvas>
+      {recording && (
+        <div
+          style={{
+            position: "fixed",
+            left: 16,
+            bottom: 16,
+            font: "12px/1 system-ui",
+            color: "#fff",
+            background: "rgba(0,0,0,.35)",
+            padding: "8px 10px",
+            borderRadius: 6,
+          }}
+        >
+          Recording loop…
+        </div>
+      )}
+    </div>
+  );
+}
