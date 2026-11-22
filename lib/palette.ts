@@ -14,23 +14,25 @@ export type PaletteKey =
   | "shoes"
   | "briefcase"
   | "binoculars"
-  | "shadow";
+  | "shadow"
+  | "bounce";
 
 export type Palette = Record<PaletteKey, string>;
 
 export const DEFAULT_PALETTE: Palette = {
-  sky: "#a8cbf3",
-  haze: "#e8eef4",
-  boardLight: "#f3eee6",
-  boardDark: "#d6d4d0",
-  piece: "#ebe7df",
-  suit: "#f1eee7",
-  skin: "#6e4a33",
-  hair: "#b9b7b2",
-  shoes: "#e9e5dc",
-  briefcase: "#6a3318",
-  binoculars: "#26262a",
-  shadow: "#a7b4c8",
+  sky: "#a6cdf5",
+  haze: "#f8f1e8",
+  boardLight: "#f6ede3",
+  boardDark: "#dcd4cd",
+  piece: "#ece5de",
+  suit: "#f7eee5",
+  skin: "#7a5139",
+  hair: "#a8a19c",
+  shoes: "#efe6de",
+  briefcase: "#4e2e1e",
+  binoculars: "#2a2624",
+  shadow: "#e2ecfb",
+  bounce: "#ebe6e1",
 };
 
 // A few alternates so the palette can be swapped like weather.

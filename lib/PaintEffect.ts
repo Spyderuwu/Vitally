@@ -76,9 +76,9 @@ export class PaintEffect extends Effect {
       attributes: EffectAttribute.CONVOLUTION,
       uniforms: new Map<string, Uniform>([
         ["uRadius", new Uniform(4)],
-        ["uLens", new Uniform(0.18)],
+        ["uLens", new Uniform(0.08)],
         ["uPaper", new Uniform(0.06)],
-        ["uVignette", new Uniform(0.35)],
+        ["uVignette", new Uniform(0.12)],
         ["uAspect", new Uniform(1.0)],
       ]),
     });

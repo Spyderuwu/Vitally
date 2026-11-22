@@ -101,10 +101,10 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
     paintUniforms.uBoardA.value.set(p.boardLight);
     paintUniforms.uBoardB.value.set(p.boardDark);
     scene.background = new THREE.Color(p.sky);
-    scene.fog = new THREE.Fog(p.haze, 28, 150);
+    scene.fog = new THREE.Fog(p.haze, 30, 160);
     if (hemi.current) {
-      hemi.current.color.set(p.sky);
-      hemi.current.groundColor.set(p.shadow);
+      hemi.current.color.set(p.shadow);
+      hemi.current.groundColor.set(p.bounce);
     }
   }, [settings.palette, mats, scene]);
 
@@ -137,7 +137,7 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
     let tAz = settings.sunAzimuth;
     let tEl = settings.sunElevation;
     if (settings.cursorSun && pointer.current) {
-      tAz = 60 + pointer.current.x * 160; // sweep the sun across the back of the scene
+      tAz = 240 - pointer.current.x * 180; // left edge: sun from the left; right edge: from the right
       tEl = 70 - pointer.current.y * 58;
     }
     const k = 1 - Math.exp(-dt * 4);
@@ -175,9 +175,10 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
 
   return (
     <>
-      <hemisphereLight ref={hemi} args={[settings.palette.sky, settings.palette.shadow, settings.ambient]} />
+      <hemisphereLight ref={hemi} args={[settings.palette.shadow, settings.palette.bounce, settings.ambient]} />
       <directionalLight
         ref={sun}
+        color="#fff1e2"
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0006}

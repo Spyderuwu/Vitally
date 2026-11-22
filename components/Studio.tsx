@@ -66,7 +66,8 @@ export default function Studio() {
       shoes: DEFAULT_PALETTE.shoes,
       briefcase: DEFAULT_PALETTE.briefcase,
       binoculars: DEFAULT_PALETTE.binoculars,
-      shadow: { value: DEFAULT_PALETTE.shadow, label: "shadow tint" },
+      shadow: { value: DEFAULT_PALETTE.shadow, label: "sky light" },
+      bounce: { value: DEFAULT_PALETTE.bounce, label: "bounce light" },
     }),
     { collapsed: false }
   );
@@ -82,10 +83,10 @@ export default function Studio() {
 
   const light = useControls("Light", {
     cursorSun: { value: true, label: "cursor is sun" },
-    sunAzimuth: { value: 140, min: 0, max: 360, step: 1, label: "sun azimuth" },
-    sunElevation: { value: 26, min: 4, max: 85, step: 1, label: "sun elevation" },
-    sunIntensity: { value: 2.0, min: 0, max: 6, step: 0.05, label: "sun strength" },
-    ambient: { value: 1.7, min: 0, max: 3, step: 0.05, label: "sky fill" },
+    sunAzimuth: { value: 160, min: 0, max: 360, step: 1, label: "sun azimuth" },
+    sunElevation: { value: 18, min: 4, max: 85, step: 1, label: "sun elevation" },
+    sunIntensity: { value: 2.2, min: 0, max: 6, step: 0.05, label: "sun strength" },
+    ambient: { value: 1.66, min: 0, max: 3, step: 0.05, label: "sky fill" },
     shadowSoftness: { value: 6, min: 1, max: 16, step: 1, label: "shadow softness" },
   });
 
@@ -95,8 +96,8 @@ export default function Studio() {
     grainScale: { value: 9, min: 1, max: 40, step: 0.5, label: "grain scale" },
     radius: { value: 4, min: 0, max: 6, step: 1, label: "brush size" },
     paper: { value: 0.06, min: 0, max: 0.3, step: 0.005, label: "paper tooth" },
-    vignette: { value: 0.35, min: 0, max: 1, step: 0.01 },
-    lens: { value: 0.18, min: 0, max: 0.8, step: 0.01, label: "lens bend" },
+    vignette: { value: 0.12, min: 0, max: 1, step: 0.01 },
+    lens: { value: 0.08, min: 0, max: 0.8, step: 0.01, label: "lens bend" },
     square: { value: 1.6, min: 0.4, max: 6, step: 0.05, label: "board square (m)" },
   });
 
