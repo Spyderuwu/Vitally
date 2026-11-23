@@ -1,8 +1,9 @@
 // One page-scroll value shared by both scenes, plus the story beats on it.
-//   0.00 – 0.40  chess: pieces fall, camera settles
-//   0.40 – 0.50  chess camera tilts up into the sky
-//   0.50 – 0.62  paper plane: camera descends out of the same sky
-//   0.62 – 1.00  paper plane holds
+//   0.00 – 0.30  chess: pieces fall, camera settles
+//   0.30 – 0.46  hold: the finished chess scene stays put (you earn the next one)
+//   0.46 – 0.55  chess camera tilts up into the sky
+//   0.55 – 0.67  paper plane: camera descends out of the same sky
+//   0.67 – 1.00  paper plane holds
 export const scrollState = { raw: 0, eased: 0, override: -1 };
 
 if (typeof window !== "undefined") {
@@ -15,7 +16,7 @@ if (typeof window !== "undefined") {
   setTimeout(onScroll, 0);
 }
 
-export const SPLIT = 0.5;
+export const SPLIT = 0.55;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 export const smooth = (x: number) => {
   const t = clamp01(x);
@@ -32,8 +33,8 @@ export function tickScroll(dt: number) {
 export function beats(g: number) {
   return {
     chessActive: g < SPLIT,
-    chessDrop: clamp01(g / 0.4),
-    chessTiltUp: smooth((g - 0.4) / 0.1),
+    chessDrop: clamp01(g / 0.3),
+    chessTiltUp: smooth((g - 0.46) / 0.09),
     planeIn: smooth((g - SPLIT) / 0.12), // 0 = still up in the sky, 1 = settled
   };
 }

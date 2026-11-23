@@ -33,7 +33,7 @@ export type SceneSettings = {
   focal: number; // mm on a 36mm sensor
 };
 
-export const camBase = { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), ready: false };
+export const camBase = { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), fov: 50, ready: false };
 
 function useBlenderCamera(gltfCam: THREE.Camera | undefined, focal: number) {
   const BLENDER_HFOV = 2 * Math.atan(18 / focal);
@@ -57,6 +57,7 @@ function useBlenderCamera(gltfCam: THREE.Camera | undefined, focal: number) {
     const refVfov = 2 * Math.atan(Math.tan(BLENDER_HFOV / 2) / REF_ASPECT);
     const vfov = aspect >= REF_ASPECT ? 2 * Math.atan(Math.tan(BLENDER_HFOV / 2) / aspect) : refVfov;
     cam.fov = THREE.MathUtils.radToDeg(vfov);
+    camBase.fov = cam.fov;
     cam.aspect = aspect;
     cam.near = 0.1;
     cam.far = 1000;
@@ -175,7 +176,14 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
     if (camBase.ready) {
       const ct = Math.min(1, p / 0.95);
       const k = settings.camMove * (1 - ct * ct * (3 - 2 * ct));
-      const cam = state.camera;
+      const cam = state.camera as THREE.PerspectiveCamera;
+      // Take the lens back from the paper plane scene when scrolling up.
+      if (cam.fov !== camBase.fov || cam.near !== 0.1) {
+        cam.fov = camBase.fov;
+        cam.near = 0.1;
+        cam.far = 1000;
+        cam.updateProjectionMatrix();
+      }
       cam.position.copy(camBase.pos);
       cam.position.y += 0.9 * k;
       cam.quaternion.copy(camBase.quat);

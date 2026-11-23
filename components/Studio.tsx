@@ -118,7 +118,7 @@ export default function Studio() {
     preview: { value: "follow scroll", options: ["follow scroll", "chess", "paper plane"], label: "show scene" },
   });
   useEffect(() => {
-    scrollState.override = story.preview === "chess" ? 0.4 : story.preview === "paper plane" ? 0.8 : -1;
+    scrollState.override = story.preview === "chess" ? 0.38 : story.preview === "paper plane" ? 0.85 : -1;
   }, [story.preview]);
 
   const planePal = useControls("Paper plane · palette", {
@@ -227,7 +227,7 @@ export default function Studio() {
   return (
     <>
     {/* Scroll track: the page is tall so scrolling drives the drop; the scene stays pinned. */}
-    <div style={{ height: "600vh" }} />
+    <div style={{ height: "800vh" }} />
     <div style={{ position: "fixed", inset: 0, background: (pal as Record<PaletteKey, string>).sky }}>
       <Leva hidden={embed} collapsed={false} titleBar={{ title: "Explorer · studio" }} />
       <Canvas
