@@ -115,10 +115,10 @@ export default function Studio() {
   });
 
   const story = useControls("Story", {
-    preview: { value: "follow scroll", options: ["follow scroll", "chess", "paper plane"], label: "show scene" },
+    preview: { value: "follow scroll", options: ["follow scroll", "chess", "paper plane", "after the push"], label: "show scene" },
   });
   useEffect(() => {
-    scrollState.override = story.preview === "chess" ? 0.38 : story.preview === "paper plane" ? 0.85 : -1;
+    scrollState.override = story.preview === "chess" ? 0.38 : story.preview === "paper plane" ? 0.69 : story.preview === "after the push" ? 1 : -1;
   }, [story.preview]);
 
   const planePal = useControls("Paper plane · palette", {

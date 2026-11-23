@@ -187,6 +187,20 @@ export function PlaneScene({ settings }: { settings: PlaneSettings }) {
     return out;
   }, [gltf]);
 
+  // Push animation (Blender frames 1-96) scrubbed by scroll.
+  const mixer = useMemo(() => {
+    const m = new THREE.AnimationMixer(gltf.scene);
+    for (const clip of gltf.animations) {
+      const a = m.clipAction(clip);
+      a.setLoop(THREE.LoopOnce, 1);
+      a.clampWhenFinished = true;
+      a.play();
+    }
+    return m;
+  }, [gltf]);
+  const clipLen = useMemo(() => Math.max(0.001, ...gltf.animations.map((c) => c.duration)), [gltf]);
+  const pushT = useRef(0);
+
   const fwd = useMemo(() => new THREE.Vector3(), []);
   const q = useMemo(() => new THREE.Quaternion(), []);
   const ax = useMemo(() => new THREE.Vector3(), []);
@@ -201,13 +215,17 @@ export function PlaneScene({ settings }: { settings: PlaneSettings }) {
     u.uSkirt.value = settings.skirtSway;
     u.uStreaks.value = settings.grassStreaks;
 
+    // Scroll drives the push; the clip is applied first, sway goes on top.
+    pushT.current += (b.planePush - pushT.current) * 0.15;
+    mixer.setTime(Math.min(pushT.current * clipLen, clipLen - 1e-3));
+
     // Hair: a slow wave down each chain, tips moving most.
     const ph = ((t % settings.loopSeconds) / settings.loopSeconds) * Math.PI * 2;
     for (const h of hair) {
       const amp = settings.hairSway * 0.06 * h.depth;
       ax.set(1, 0, 0);
       q.setFromAxisAngle(ax, Math.sin(ph - h.depth * 0.7 + h.side) * amp);
-      h.bone.quaternion.copy(h.base).multiply(q);
+      h.bone.quaternion.multiply(q);
       ax.set(0, 0, 1);
       q.setFromAxisAngle(ax, Math.sin(ph * 2 - h.depth * 0.9) * amp * 0.5);
       h.bone.quaternion.multiply(q);
