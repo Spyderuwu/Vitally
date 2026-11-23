@@ -64,6 +64,7 @@ export default function Studio() {
       skin: DEFAULT_PALETTE.skin,
       hair: DEFAULT_PALETTE.hair,
       shoes: DEFAULT_PALETTE.shoes,
+      pants: DEFAULT_PALETTE.pants,
       briefcase: DEFAULT_PALETTE.briefcase,
       binoculars: DEFAULT_PALETTE.binoculars,
       shadow: { value: DEFAULT_PALETTE.shadow, label: "sky light" },
@@ -83,18 +84,18 @@ export default function Studio() {
 
   const light = useControls("Light", {
     cursorSun: { value: true, label: "cursor is sun" },
-    sunAzimuth: { value: 160, min: 0, max: 360, step: 1, label: "sun azimuth" },
-    sunElevation: { value: 18, min: 4, max: 85, step: 1, label: "sun elevation" },
-    sunIntensity: { value: 2.2, min: 0, max: 6, step: 0.05, label: "sun strength" },
-    ambient: { value: 1.66, min: 0, max: 3, step: 0.05, label: "sky fill" },
+    sunAzimuth: { value: 255, min: 0, max: 360, step: 1, label: "sun azimuth" },
+    sunElevation: { value: 16, min: 4, max: 85, step: 1, label: "sun elevation" },
+    sunIntensity: { value: 2.9, min: 0, max: 6, step: 0.05, label: "sun strength" },
+    ambient: { value: 0.95, min: 0, max: 3, step: 0.05, label: "sky fill" },
     shadowSoftness: { value: 6, min: 1, max: 16, step: 1, label: "shadow softness" },
   });
 
   const paint = useControls("Paint", {
-    rampSoftness: { value: 0.2, min: 0.02, max: 0.48, step: 0.01, label: "light falloff" },
+    rampSoftness: { value: 0.05, min: 0.02, max: 0.48, step: 0.01, label: "light falloff" },
     grain: { value: 0.22, min: 0, max: 0.8, step: 0.01, label: "surface grain" },
     grainScale: { value: 9, min: 1, max: 40, step: 0.5, label: "grain scale" },
-    radius: { value: 4, min: 0, max: 6, step: 1, label: "brush size" },
+    radius: { value: 3, min: 0, max: 6, step: 1, label: "brush size" },
     paper: { value: 0.06, min: 0, max: 0.3, step: 0.005, label: "paper tooth" },
     vignette: { value: 0.12, min: 0, max: 1, step: 0.01 },
     lens: { value: 0.08, min: 0, max: 0.8, step: 0.01, label: "lens bend" },

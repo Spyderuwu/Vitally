@@ -13,17 +13,29 @@ export const paintUniforms = {
 // Soft two-tone ramp: a gentle shoulder instead of a hard toon step, so light
 // rolls over forms the way gouache does.
 let rampTex: THREE.DataTexture | null = null;
-export function getRamp(softness = 0.18) {
+export function getRamp(softness = 0.05) {
+  // Three flat values (shadow / half-tone / lit) with a short blend between them,
+  // matching the cel-like steps traced from the reference.
   const size = 256;
   const data = new Uint8Array(size * 4);
+  const steps = [
+    { at: 0.0, v: 0.36 },
+    { at: 0.42, v: 0.68 },
+    { at: 0.62, v: 1.0 },
+  ];
+  const ss = (a: number, b: number, x: number) => {
+    const t = Math.min(1, Math.max(0, (x - a) / Math.max(1e-4, b - a)));
+    return t * t * (3 - 2 * t);
+  };
   for (let i = 0; i < size; i++) {
     const x = i / (size - 1);
-    const lo = 0.5 - softness;
-    const hi = 0.5 + softness;
-    const t = Math.min(1, Math.max(0, (x - lo) / (hi - lo)));
-    const s = t * t * (3 - 2 * t);
-    const v = Math.round(255 * (0.12 + 0.88 * (0.8 * s + 0.2 * x)));
-    data.set([v, v, v, 255], i * 4);
+    let v = steps[0].v;
+    for (let k = 1; k < steps.length; k++) {
+      const e = steps[k].at;
+      v += (steps[k].v - steps[k - 1].v) * ss(e - softness, e + softness, x);
+    }
+    const b = Math.round(255 * v);
+    data.set([b, b, b, 255], i * 4);
   }
   if (!rampTex) {
     rampTex = new THREE.DataTexture(data, size, 1, THREE.RGBAFormat);

@@ -12,6 +12,7 @@ export type PaletteKey =
   | "skin"
   | "hair"
   | "shoes"
+  | "pants"
   | "briefcase"
   | "binoculars"
   | "shadow"
@@ -29,6 +30,7 @@ export const DEFAULT_PALETTE: Palette = {
   skin: "#7a5139",
   hair: "#a8a19c",
   shoes: "#efe6de",
+  pants: "#f1e8df",
   briefcase: "#4e2e1e",
   binoculars: "#2a2624",
   shadow: "#e2ecfb",
@@ -69,6 +71,11 @@ export const PRESETS: Record<string, Palette> = {
 // GLB material name -> palette slot.
 export const MATERIAL_SLOTS: Record<string, PaletteKey> = {
   MAT_Man_Suit: "suit",
+  MAT_Shirt: "suit",
+  MAT_Pants: "pants",
+  MAT_Skin: "skin",
+  MAT_Hair: "hair",
+  MAT_Shoes: "shoes",
   MAT_Man_Skin: "skin",
   MAT_Man_Hair: "hair",
   MAT_Man_Shoes: "shoes",

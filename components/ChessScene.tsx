@@ -68,7 +68,7 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
       const m = o as THREE.Mesh;
       if (!m.isMesh) return;
       const src = m.material as THREE.Material;
-      const slot = MATERIAL_SLOTS[src.name] ?? "piece";
+      const slot = MATERIAL_SLOTS[src.name.replace(/\.\d+$/, "")] ?? "piece";
       if (!bySlot[slot]) bySlot[slot] = makePainterly(settings.palette[slot]);
       m.material = bySlot[slot];
       m.castShadow = true;
@@ -137,8 +137,8 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
     let tAz = settings.sunAzimuth;
     let tEl = settings.sunElevation;
     if (settings.cursorSun && pointer.current) {
-      tAz = 240 - pointer.current.x * 180; // left edge: sun from the left; right edge: from the right
-      tEl = 70 - pointer.current.y * 58;
+      tAz = 300 - pointer.current.x * 150; // a third in from the left ≈ the reference's low left sun
+      tEl = Math.max(5, 42 - pointer.current.y * 42);
     }
     const k = 1 - Math.exp(-dt * 4);
     az.current += (tAz - az.current) * k;
