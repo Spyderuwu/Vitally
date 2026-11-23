@@ -145,9 +145,9 @@ export default function Studio() {
     zoom: { value: 0.68, min: 0.2, max: 3, step: 0.01 },
     shiftX: { value: -0.2, min: -2, max: 2, step: 0.01, label: "frame shift x" },
     shiftY: { value: -0.45, min: -2, max: 2, step: 0.01, label: "frame shift y" },
-    updraft: { value: 6, min: 0, max: 20, step: 0.5, label: "plane updraft (m)" },
-    hairSway: { value: 1, min: 0, max: 3, step: 0.05, label: "hair sway" },
-    skirtSway: { value: 1, min: 0, max: 3, step: 0.05, label: "skirt sway" },
+    updraft: { value: 0, min: 0, max: 20, step: 0.5, label: "plane updraft (m)" },
+    hairSway: { value: 1.5, min: 0, max: 3, step: 0.05, label: "hair sway" },
+    skirtSway: { value: 2.6, min: 0, max: 3, step: 0.05, label: "skirt sway" },
     grassStreaks: { value: 1, min: 0, max: 2, step: 0.05, label: "grass streaks" },
   }, { collapsed: true });
 
