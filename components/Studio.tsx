@@ -142,7 +142,7 @@ export default function Studio() {
     ambient: { value: 2.2, min: 0, max: 4, step: 0.05, label: "sky fill" },
     flatness: { value: 0.75, min: 0, max: 1, step: 0.01 },
     softness: { value: 0.3, min: 0.02, max: 0.48, step: 0.01, label: "light falloff" },
-    zoom: { value: 0.42, min: 0.2, max: 3, step: 0.01 },
+    zoom: { value: 0.68, min: 0.2, max: 3, step: 0.01 },
     shiftX: { value: -0.2, min: -2, max: 2, step: 0.01, label: "frame shift x" },
     shiftY: { value: -0.45, min: -2, max: 2, step: 0.01, label: "frame shift y" },
     hairSway: { value: 1, min: 0, max: 3, step: 0.05, label: "hair sway" },
