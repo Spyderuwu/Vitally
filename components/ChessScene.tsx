@@ -25,6 +25,9 @@ export type SceneSettings = {
   idle: boolean;
   loopSeconds: number;
   cursorSun: boolean;
+  dropEnabled: boolean;
+  dropHeight: number;
+  dropPreview: number; // -1 = follow scroll
 };
 
 function useBlenderCamera(gltfCam: THREE.Camera | undefined) {
@@ -78,6 +81,32 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
     return bySlot;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gltf]);
+
+  // Pieces that fall onto the board with scroll (everything but the center piece).
+  const drops = useMemo(() => {
+    const list: { obj: THREE.Object3D; baseY: number; delay: number; spin: number }[] = [];
+    gltf.scene.traverse((o) => {
+      if (o.name.startsWith("Piece_") && o.name !== "Piece_Center") list.push({ obj: o, baseY: o.position.y, delay: 0, spin: 0 });
+    });
+    // stagger: nearer pieces land first
+    list.sort((a, b) => a.obj.position.z - b.obj.position.z).reverse();
+    list.forEach((d, i) => {
+      d.delay = (i / Math.max(1, list.length - 1)) * 0.45;
+      d.spin = (i % 2 ? 1 : -1) * (0.35 + 0.15 * i);
+    });
+    return list;
+  }, [gltf]);
+  const scroll = useRef(0);
+  const scrollEased = useRef(0);
+  useEffect(() => {
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      scroll.current = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 1;
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const boardMat = useMemo(() => makePainterly("#ffffff", { board: true }), []);
   const gltfCam = useMemo(() => gltf.cameras?.[0], [gltf]);
@@ -133,6 +162,21 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
   const el = useRef(settings.sunElevation);
 
   useFrame((state, dt) => {
+    // Scroll drop: each piece eases in, overshoots a hair and settles.
+    const target = !settings.dropEnabled ? 1 : settings.dropPreview >= 0 ? settings.dropPreview : scroll.current;
+    scrollEased.current += (target - scrollEased.current) * (1 - Math.exp(-dt * 8));
+    const p = scrollEased.current;
+    for (const d of drops) {
+      const t = Math.min(1, Math.max(0, (p - d.delay) / 0.55));
+      // ease-in fall, then a small damped bounce
+      const fall = t < 0.8 ? 1 - Math.pow(t / 0.8, 2) : 0;
+      const bt = t < 0.8 ? 0 : (t - 0.8) / 0.2;
+      const bounce = t < 0.8 ? 0 : Math.sin(bt * Math.PI) * 0.04 * (1 - bt);
+      d.obj.position.y = d.baseY + settings.dropHeight * (fall + bounce);
+      d.obj.rotation.y = d.spin * (1 - t) * (1 - t);
+      d.obj.visible = t > 0 || settings.dropHeight === 0;
+    }
+
     // Sun: either from the panel or from the cursor (eased either way).
     let tAz = settings.sunAzimuth;
     let tEl = settings.sunElevation;

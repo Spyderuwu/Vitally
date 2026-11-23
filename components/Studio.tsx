@@ -92,7 +92,7 @@ export default function Studio() {
   });
 
   const paint = useControls("Paint", {
-    rampSoftness: { value: 0.05, min: 0.02, max: 0.48, step: 0.01, label: "light falloff" },
+    rampSoftness: { value: 0.22, min: 0.02, max: 0.48, step: 0.01, label: "light falloff" },
     grain: { value: 0.22, min: 0, max: 0.8, step: 0.01, label: "surface grain" },
     grainScale: { value: 9, min: 1, max: 40, step: 0.5, label: "grain scale" },
     radius: { value: 3, min: 0, max: 6, step: 1, label: "brush size" },
@@ -100,6 +100,13 @@ export default function Studio() {
     vignette: { value: 0.12, min: 0, max: 1, step: 0.01 },
     lens: { value: 0.08, min: 0, max: 0.8, step: 0.01, label: "lens bend" },
     square: { value: 1.6, min: 0.4, max: 6, step: 0.05, label: "board square (m)" },
+  });
+
+  const drop = useControls("Scroll drop", {
+    dropEnabled: { value: true, label: "pieces fall on scroll" },
+    dropHeight: { value: 14, min: 0, max: 40, step: 0.5, label: "drop height" },
+    followScroll: { value: true, label: "follow page scroll" },
+    dropPreview: { value: 1, min: 0, max: 1, step: 0.01, label: "preview", render: (get) => !get("Scroll drop.followScroll") },
   });
 
   const motion = useControls("Motion", {
@@ -152,9 +159,15 @@ export default function Studio() {
     idle: motion.idle,
     loopSeconds: motion.loopSeconds as number,
     cursorSun: embed || light.cursorSun,
+    dropEnabled: drop.dropEnabled,
+    dropHeight: drop.dropHeight,
+    dropPreview: drop.followScroll ? -1 : drop.dropPreview,
   };
 
   return (
+    <>
+    {/* Scroll track: the page is tall so scrolling drives the drop; the scene stays pinned. */}
+    <div style={{ height: drop.dropEnabled ? "300vh" : "100vh" }} />
     <div style={{ position: "fixed", inset: 0, background: (pal as Record<PaletteKey, string>).sky }}>
       <Leva hidden={embed} collapsed={false} titleBar={{ title: "Explorer · studio" }} />
       <Canvas
@@ -186,5 +199,6 @@ export default function Studio() {
         </div>
       )}
     </div>
+    </>
   );
 }

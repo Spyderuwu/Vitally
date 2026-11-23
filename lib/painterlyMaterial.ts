@@ -13,15 +13,15 @@ export const paintUniforms = {
 // Soft two-tone ramp: a gentle shoulder instead of a hard toon step, so light
 // rolls over forms the way gouache does.
 let rampTex: THREE.DataTexture | null = null;
-export function getRamp(softness = 0.05) {
+export function getRamp(softness = 0.22) {
   // Three flat values (shadow / half-tone / lit) with a short blend between them,
   // matching the cel-like steps traced from the reference.
   const size = 256;
   const data = new Uint8Array(size * 4);
+  // One soft terminator: shadow -> lit, no half-tone band.
   const steps = [
-    { at: 0.0, v: 0.36 },
-    { at: 0.42, v: 0.68 },
-    { at: 0.62, v: 1.0 },
+    { at: 0.0, v: 0.4 },
+    { at: 0.52, v: 1.0 },
   ];
   const ss = (a: number, b: number, x: number) => {
     const t = Math.min(1, Math.max(0, (x - a) / Math.max(1e-4, b - a)));
