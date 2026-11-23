@@ -170,21 +170,9 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
   const el = useRef(settings.sunElevation);
 
   useFrame((state, dt) => {
-    // Scroll drop: each piece eases in, overshoots a hair and settles.
     const target = !settings.dropEnabled ? 1 : settings.dropPreview >= 0 ? settings.dropPreview : scroll.current;
     scrollEased.current += (target - scrollEased.current) * (1 - Math.exp(-dt * 8));
     const p = scrollEased.current;
-    for (const d of drops) {
-      const t = Math.min(1, Math.max(0, (p - d.delay) / 0.55));
-      // ease-in fall, then a small damped bounce
-      const fall = t < 0.8 ? 1 - Math.pow(t / 0.8, 2) : 0;
-      const bt = t < 0.8 ? 0 : (t - 0.8) / 0.2;
-      const bounce = t < 0.8 ? 0 : Math.sin(bt * Math.PI) * 0.04 * (1 - bt);
-      d.obj.position.y = d.baseY + settings.dropHeight * (fall + bounce);
-      d.obj.rotation.y = d.spin * (1 - t) * (1 - t);
-      d.obj.visible = t > 0 || settings.dropHeight === 0;
-    }
-
     // Camera rides down with the pieces: starts a little higher, tilted up,
     // and settles into the reference framing as the last piece lands.
     if (camBase.ready) {
@@ -197,6 +185,31 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
       cam.rotateX(-0.035 * k);
       cam.rotateZ(0.012 * k);
     }
+    // Scroll drop: each piece eases in, overshoots a hair and settles.
+    // Start height per piece: high enough that its base sits above the top
+    // of the frame for the current camera (focal length, lens bend, camera
+    // move), so pieces always slide in from off screen instead of popping.
+    const cam3 = state.camera as THREE.PerspectiveCamera;
+    cam3.updateMatrixWorld();
+    for (const d of drops) {
+      let lo = 0, hi = 200;
+      const probe = new THREE.Vector3();
+      for (let i = 0; i < 18; i++) {
+        const mid = (lo + hi) / 2;
+        probe.set(d.obj.position.x, d.baseY + mid, d.obj.position.z).project(cam3);
+        if (probe.y > 1.08 || probe.z > 1) hi = mid; else lo = mid;
+      }
+      const startH = Math.max(settings.dropHeight, hi + 0.5);
+      const t = Math.min(1, Math.max(0, (p - d.delay) / 0.55));
+      // ease-in fall, then a small damped bounce
+      const fall = t < 0.8 ? 1 - Math.pow(t / 0.8, 2) : 0;
+      const bt = t < 0.8 ? 0 : (t - 0.8) / 0.2;
+      const bounce = t < 0.8 ? 0 : Math.sin(bt * Math.PI) * 0.04 * (1 - bt);
+      d.obj.position.y = d.baseY + startH * fall + settings.dropHeight * bounce;
+      d.obj.rotation.y = d.spin * (1 - t) * (1 - t);
+      d.obj.visible = true;
+    }
+
 
     // Sun: either from the panel or from the cursor (eased either way).
     let tAz = settings.sunAzimuth;
