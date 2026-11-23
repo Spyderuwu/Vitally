@@ -28,7 +28,10 @@ export type SceneSettings = {
   dropEnabled: boolean;
   dropHeight: number;
   dropPreview: number; // -1 = follow scroll
+  camMove: number; // 0 = off, 1 = default amount
 };
+
+const camBase = { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), ready: false };
 
 function useBlenderCamera(gltfCam: THREE.Camera | undefined) {
   const { camera, size } = useThree();
@@ -41,6 +44,9 @@ function useBlenderCamera(gltfCam: THREE.Camera | undefined) {
     gltfCam.matrixWorld.decompose(p, q, s);
     camera.position.copy(p);
     camera.quaternion.copy(q);
+    camBase.pos.copy(p);
+    camBase.quat.copy(q);
+    camBase.ready = true;
     const cam = camera as THREE.PerspectiveCamera;
     const aspect = size.width / size.height;
     // Keep the reference's horizontal framing on wide screens; on narrower
@@ -175,6 +181,19 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
       d.obj.position.y = d.baseY + settings.dropHeight * (fall + bounce);
       d.obj.rotation.y = d.spin * (1 - t) * (1 - t);
       d.obj.visible = t > 0 || settings.dropHeight === 0;
+    }
+
+    // Camera rides down with the pieces: starts a little higher, tilted up,
+    // and settles into the reference framing as the last piece lands.
+    if (camBase.ready) {
+      const ct = Math.min(1, p / 0.95);
+      const k = settings.camMove * (1 - ct * ct * (3 - 2 * ct));
+      const cam = state.camera;
+      cam.position.copy(camBase.pos);
+      cam.position.y += 0.9 * k;
+      cam.quaternion.copy(camBase.quat);
+      cam.rotateX(-0.035 * k);
+      cam.rotateZ(0.012 * k);
     }
 
     // Sun: either from the panel or from the cursor (eased either way).

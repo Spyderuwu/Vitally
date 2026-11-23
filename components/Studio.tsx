@@ -105,6 +105,7 @@ export default function Studio() {
   const drop = useControls("Scroll drop", {
     dropEnabled: { value: true, label: "pieces fall on scroll" },
     dropHeight: { value: 14, min: 0, max: 40, step: 0.5, label: "drop height" },
+    camMove: { value: 1, min: 0, max: 3, step: 0.05, label: "camera move" },
     followScroll: { value: true, label: "follow page scroll" },
     dropPreview: { value: 1, min: 0, max: 1, step: 0.01, label: "preview", render: (get) => !get("Scroll drop.followScroll") },
   });
@@ -161,6 +162,7 @@ export default function Studio() {
     cursorSun: embed || light.cursorSun,
     dropEnabled: drop.dropEnabled,
     dropHeight: drop.dropHeight,
+    camMove: drop.dropEnabled ? drop.camMove : 0,
     dropPreview: drop.followScroll ? -1 : drop.dropPreview,
   };
 
