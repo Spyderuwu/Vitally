@@ -217,6 +217,8 @@ export function PlaneScene({ settings }: { settings: PlaneSettings }) {
 
     // Scroll drives the push; the clip is applied first, sway goes on top.
     pushT.current += (b.planePush - pushT.current) * 0.15;
+    // Start every frame from the bind pose so the sway can never pile up.
+    for (const h of hair) h.bone.quaternion.copy(h.base);
     mixer.setTime(Math.min(pushT.current * clipLen, clipLen - 1e-3));
 
     // Hair: a slow wave down each chain, tips moving most.
@@ -243,6 +245,7 @@ export function PlaneScene({ settings }: { settings: PlaneSettings }) {
     const h = cam.height / settings.zoom;
     camera.quaternion.copy(cam.quat);
     camera.position.copy(cam.pos).addScaledVector(fwd, -D);
+    // Keep the frame centred on her (and the plane's path) at any zoom.
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(cam.quat);
     camera.position.addScaledVector(right, settings.shiftX);
     camera.position.addScaledVector(new THREE.Vector3(0, 1, 0).applyQuaternion(cam.quat), settings.shiftY);
