@@ -7,7 +7,7 @@ export const paintUniforms = {
   uGrainScale: { value: 9.0 },
   uBoardA: { value: new THREE.Color("#f3eee6") },
   uBoardB: { value: new THREE.Color("#d6d4d0") },
-  uSquare: { value: 1.6 },
+  uSquare: { value: 2.2 },
 };
 
 // Soft two-tone ramp: a gentle shoulder instead of a hard toon step, so light
@@ -83,7 +83,7 @@ export function makePainterly(color: THREE.ColorRepresentation, opts: { board?: 
       );
     const board = opts.board
       ? `
-        vec2 q = floor(vPaintWorld.xz / uSquare);
+        vec2 q = floor(vPaintWorld.xz / uSquare + 0.5); // squares centred on the grid, centre piece on (0,0)
         float chk = mod(q.x + q.y, 2.0);
         diffuseColor.rgb = mix(uBoardA, uBoardB, chk);
 `

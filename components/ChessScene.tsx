@@ -92,9 +92,9 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
 
   // Pieces that fall onto the board with scroll (everything but the center piece).
   const drops = useMemo(() => {
-    const list: { obj: THREE.Object3D; baseY: number; delay: number; spin: number }[] = [];
+    const list: { obj: THREE.Object3D; baseY: number; delay: number; spin: number; cell: [number, number] }[] = [];
     gltf.scene.traverse((o) => {
-      if (o.name.startsWith("Piece_") && o.name !== "Piece_Center") list.push({ obj: o, baseY: o.position.y, delay: 0, spin: 0 });
+      if (o.name.startsWith("Piece_") && o.name !== "Piece_Center") list.push({ obj: o, baseY: o.position.y, delay: 0, spin: 0, cell: [Math.round(o.position.x / 2.2), Math.round(o.position.z / 2.2)] });
     });
     // stagger: nearer pieces land first
     list.sort((a, b) => a.obj.position.z - b.obj.position.z).reverse();
@@ -204,6 +204,9 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
       // ease-in fall that lands cleanly (no bounce)
       const fall = 1 - t * t;
       d.obj.position.y = d.baseY + startH * fall;
+      // Each piece sits in the middle of its own board square.
+      d.obj.position.x = d.cell[0] * paintUniforms.uSquare.value;
+      d.obj.position.z = d.cell[1] * paintUniforms.uSquare.value;
       d.obj.rotation.y = d.spin * (1 - t) * (1 - t);
       d.obj.visible = true;
     }
