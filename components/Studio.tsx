@@ -6,6 +6,8 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { EffectComposer } from "@react-three/postprocessing";
 import { Leva, button, folder, useControls } from "leva";
 import { ChessScene, SceneSettings } from "./ChessScene";
+import { PlaneScene, PLANE_PALETTE, PlaneSettings, PlanePalette } from "./PlaneScene";
+import { scrollState } from "@/lib/scroll";
 import { PaintEffect } from "@/lib/PaintEffect";
 import { paintUniforms } from "@/lib/painterlyMaterial";
 import { DEFAULT_PALETTE, PRESETS, Palette, PaletteKey } from "@/lib/palette";
@@ -112,6 +114,42 @@ export default function Studio() {
     dropPreview: { value: 1, min: 0, max: 1, step: 0.01, label: "preview", render: (get) => !get("Scroll drop.followScroll") },
   });
 
+  const story = useControls("Story", {
+    preview: { value: "follow scroll", options: ["follow scroll", "chess", "paper plane"], label: "show scene" },
+  });
+  useEffect(() => {
+    scrollState.override = story.preview === "chess" ? 0.4 : story.preview === "paper plane" ? 0.8 : -1;
+  }, [story.preview]);
+
+  const planePal = useControls("Paper plane · palette", {
+    sky: PLANE_PALETTE.sky,
+    skin: PLANE_PALETTE.skin,
+    dress: PLANE_PALETTE.dress,
+    top: PLANE_PALETTE.top,
+    hair: PLANE_PALETTE.hair,
+    shoes: PLANE_PALETTE.shoes,
+    paper: PLANE_PALETTE.paper,
+    grassDark: { value: PLANE_PALETTE.grassDark, label: "grass dark" },
+    grassLight: { value: PLANE_PALETTE.grassLight, label: "grass light" },
+    skyLight: { value: PLANE_PALETTE.skyLight, label: "sky light" },
+    bounce: { value: PLANE_PALETTE.bounce, label: "bounce light" },
+  }, { collapsed: true });
+
+  const plane = useControls("Paper plane · light & motion", {
+    sunAzimuth: { value: 250, min: 0, max: 360, step: 1, label: "sun azimuth" },
+    sunElevation: { value: 40, min: 4, max: 85, step: 1, label: "sun elevation" },
+    sunIntensity: { value: 1.6, min: 0, max: 6, step: 0.05, label: "sun strength" },
+    ambient: { value: 2.2, min: 0, max: 4, step: 0.05, label: "sky fill" },
+    flatness: { value: 0.75, min: 0, max: 1, step: 0.01 },
+    softness: { value: 0.3, min: 0.02, max: 0.48, step: 0.01, label: "light falloff" },
+    zoom: { value: 1.25, min: 0.5, max: 3, step: 0.01 },
+    shiftX: { value: 0.15, min: -2, max: 2, step: 0.01, label: "frame shift x" },
+    shiftY: { value: -0.12, min: -2, max: 2, step: 0.01, label: "frame shift y" },
+    hairSway: { value: 1, min: 0, max: 3, step: 0.05, label: "hair sway" },
+    skirtSway: { value: 1, min: 0, max: 3, step: 0.05, label: "skirt sway" },
+    grassStreaks: { value: 1, min: 0, max: 2, step: 0.05, label: "grass streaks" },
+  }, { collapsed: true });
+
   const motion = useControls("Motion", {
     idle: { value: true, label: "idle loop" },
     loopSeconds: { value: 4, options: { "4 s": 4, "6 s": 6, "8 s": 8 }, label: "loop length" },
@@ -169,10 +207,27 @@ export default function Studio() {
     dropPreview: drop.followScroll ? -1 : drop.dropPreview,
   };
 
+  const planeSettings: PlaneSettings = {
+    palette: planePal as unknown as PlanePalette,
+    sunAzimuth: plane.sunAzimuth,
+    sunElevation: plane.sunElevation,
+    sunIntensity: plane.sunIntensity,
+    ambient: plane.ambient,
+    flatness: plane.flatness,
+    softness: plane.softness,
+    zoom: plane.zoom,
+    shiftX: plane.shiftX,
+    shiftY: plane.shiftY,
+    hairSway: plane.hairSway,
+    skirtSway: plane.skirtSway,
+    grassStreaks: plane.grassStreaks,
+    loopSeconds: motion.loopSeconds as number,
+  };
+
   return (
     <>
     {/* Scroll track: the page is tall so scrolling drives the drop; the scene stays pinned. */}
-    <div style={{ height: drop.dropEnabled ? "300vh" : "100vh" }} />
+    <div style={{ height: "600vh" }} />
     <div style={{ position: "fixed", inset: 0, background: (pal as Record<PaletteKey, string>).sky }}>
       <Leva hidden={embed} collapsed={false} titleBar={{ title: "Explorer · studio" }} />
       <Canvas
@@ -184,6 +239,7 @@ export default function Studio() {
         <GlGrabber onGl={(gl) => (glRef.current = gl)} />
         <Suspense fallback={null}>
           <ChessScene settings={settings} />
+          <PlaneScene settings={planeSettings} />
         </Suspense>
         <Paint s={{ radius: paint.radius, lens: paint.lens, paper: paint.paper, vignette: paint.vignette }} />
       </Canvas>

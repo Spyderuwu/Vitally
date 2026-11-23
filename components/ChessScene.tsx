@@ -6,6 +6,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { makePainterly, paintUniforms, getRamp } from "@/lib/painterlyMaterial";
 import { MATERIAL_SLOTS, Palette, PaletteKey } from "@/lib/palette";
+import { scrollState, tickScroll, beats } from "@/lib/scroll";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 export const MODEL_URL = `${BASE}/models/chess_scene.glb`;
@@ -32,7 +33,7 @@ export type SceneSettings = {
   focal: number; // mm on a 36mm sensor
 };
 
-const camBase = { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), ready: false };
+export const camBase = { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), ready: false };
 
 function useBlenderCamera(gltfCam: THREE.Camera | undefined, focal: number) {
   const BLENDER_HFOV = 2 * Math.atan(18 / focal);
@@ -104,18 +105,6 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
     });
     return list;
   }, [gltf]);
-  const scroll = useRef(0);
-  const scrollEased = useRef(0);
-  useEffect(() => {
-    const onScroll = () => {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      scroll.current = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 1;
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   const boardMat = useMemo(() => makePainterly("#ffffff", { board: true }), []);
   const gltfCam = useMemo(() => gltf.cameras?.[0], [gltf]);
   useBlenderCamera(gltfCam, settings.focal);
@@ -137,8 +126,6 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
     (Object.keys(mats) as PaletteKey[]).forEach((k) => mats[k].color.set(p[k]));
     paintUniforms.uBoardA.value.set(p.boardLight);
     paintUniforms.uBoardB.value.set(p.boardDark);
-    scene.background = new THREE.Color(p.sky);
-    scene.fog = new THREE.Fog(p.haze, 30, 160);
     if (hemi.current) {
       hemi.current.color.set(p.shadow);
       hemi.current.groundColor.set(p.bounce);
@@ -169,10 +156,20 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
   const az = useRef(settings.sunAzimuth);
   const el = useRef(settings.sunElevation);
 
+  const fog = useMemo(() => new THREE.Fog("#ffffff", 30, 160), []);
+  const group = useRef<THREE.Group>(null);
+
   useFrame((state, dt) => {
-    const target = !settings.dropEnabled ? 1 : settings.dropPreview >= 0 ? settings.dropPreview : scroll.current;
-    scrollEased.current += (target - scrollEased.current) * (1 - Math.exp(-dt * 8));
-    const p = scrollEased.current;
+    const g = tickScroll(dt);
+    const b = beats(g);
+    if (group.current) group.current.visible = b.chessActive;
+    if (!b.chessActive) return; // the paper plane scene owns the camera now
+    fog.color.set(settings.palette.haze);
+    scene.fog = fog;
+    (scene.background as THREE.Color | null)?.isColor
+      ? (scene.background as THREE.Color).set(settings.palette.sky)
+      : (scene.background = new THREE.Color(settings.palette.sky));
+    const p = !settings.dropEnabled ? 1 : settings.dropPreview >= 0 ? settings.dropPreview : b.chessDrop;
     // Camera rides down with the pieces: starts a little higher, tilted up,
     // and settles into the reference framing as the last piece lands.
     if (camBase.ready) {
@@ -184,6 +181,9 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
       cam.quaternion.copy(camBase.quat);
       cam.rotateX(-0.035 * k);
       cam.rotateZ(0.012 * k);
+      // Hand-off to the next scene: tilt up until only sky is left.
+      cam.position.y += 3 * b.chessTiltUp;
+      cam.rotateX(1.25 * b.chessTiltUp);
     }
     // Scroll drop: each piece falls in and lands.
     // Start height per piece: high enough that its base sits above the top
@@ -253,7 +253,7 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
   });
 
   return (
-    <>
+    <group ref={group}>
       <hemisphereLight ref={hemi} args={[settings.palette.shadow, settings.palette.bounce, settings.ambient]} />
       <directionalLight
         ref={sun}
@@ -274,7 +274,7 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
       <mesh rotation-x={-Math.PI / 2} receiveShadow material={boardMat}>
         <planeGeometry args={[800, 800]} />
       </mesh>
-    </>
+    </group>
   );
 }
 

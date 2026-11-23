@@ -71,16 +71,51 @@ const NOISE = /* glsl */ `
  *  - optional world-space checkerboard for the ground
  * Toon keeps skinning, morph targets and shadows working for free.
  */
-export function makePainterly(color: THREE.ColorRepresentation, opts: { board?: boolean } = {}) {
-  const mat = new THREE.MeshToonMaterial({ color, gradientMap: getRamp() });
+export function makeRamp(softness: number, low: number, tex?: THREE.DataTexture) {
+  // Single soft step from `low` (shadow value) up to full light.
+  const size = 256;
+  const data = new Uint8Array(size * 4);
+  for (let i = 0; i < size; i++) {
+    const x = i / (size - 1);
+    const a = 0.52 - softness, b = 0.52 + softness;
+    const t = Math.min(1, Math.max(0, (x - a) / Math.max(1e-4, b - a)));
+    const v = low + (1 - low) * t * t * (3 - 2 * t);
+    const c = Math.round(255 * v);
+    data.set([c, c, c, 255], i * 4);
+  }
+  if (!tex) {
+    tex = new THREE.DataTexture(data, size, 1, THREE.RGBAFormat);
+    tex.magFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearFilter;
+    tex.generateMipmaps = false;
+  } else {
+    (tex.image.data as Uint8Array).set(data);
+  }
+  tex.needsUpdate = true;
+  return tex;
+}
+
+export function makePainterly(
+  color: THREE.ColorRepresentation,
+  opts: { board?: boolean; ramp?: THREE.Texture; extraUniforms?: Record<string, THREE.IUniform>; vertexAfterSkin?: string; colorFragment?: string; key?: string } = {}
+) {
+  const mat = new THREE.MeshToonMaterial({ color, gradientMap: opts.ramp ?? getRamp() });
   mat.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, paintUniforms);
+    Object.assign(shader.uniforms, paintUniforms, opts.extraUniforms ?? {});
+    const extraDecl = Object.keys(opts.extraUniforms ?? {})
+      .map((k) => {
+        const v = opts.extraUniforms![k].value;
+        const t = typeof v === "number" ? "float" : (v as THREE.Color).isColor ? "vec3" : "vec3";
+        return `uniform ${t} ${k};`;
+      })
+      .join("\n");
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", "#include <common>\nvarying vec3 vPaintPos;\nvarying vec3 vPaintWorld;")
       .replace(
         "#include <skinning_vertex>",
-        "#include <skinning_vertex>\nvPaintPos = transformed;\nvPaintWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;"
-      );
+        "#include <skinning_vertex>\n" + (opts.vertexAfterSkin ?? "") + "\nvPaintPos = transformed;\nvPaintWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;"
+      )
+      .replace("#include <common>", "#include <common>\n" + extraDecl);
     const board = opts.board
       ? `
         vec2 q = floor(vPaintWorld.xz / uSquare + 0.5); // squares centred on the grid, centre piece on (0,0)
@@ -91,12 +126,13 @@ export function makePainterly(color: THREE.ColorRepresentation, opts: { board?: 
     shader.fragmentShader = shader.fragmentShader
       .replace(
         "#include <common>",
-        `#include <common>\n${NOISE}\nuniform vec3 uBoardA;\nuniform vec3 uBoardB;\nuniform float uSquare;`
+        `#include <common>\n${NOISE}\nuniform vec3 uBoardA;\nuniform vec3 uBoardB;\nuniform float uSquare;\n${extraDecl}`
       )
       .replace(
         "#include <color_fragment>",
         `#include <color_fragment>
         ${board}
+        ${opts.colorFragment ?? ""}
         // World-space grain: the posed (skinned) position is used, so it rides along with the surface.
         vec3 gp = vPaintWorld;
         float g1 = fbm(gp * uGrainScale);
@@ -104,6 +140,6 @@ export function makePainterly(color: THREE.ColorRepresentation, opts: { board?: 
         diffuseColor.rgb *= 1.0 + ((g1 - 0.5) * 0.55 + (g2 - 0.5) * 0.45) * uGrain;`
       );
   };
-  mat.customProgramCacheKey = () => (opts.board ? "painterly-board" : "painterly");
+  mat.customProgramCacheKey = () => opts.key ?? (opts.board ? "painterly-board" : "painterly");
   return mat;
 }
