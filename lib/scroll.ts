@@ -3,7 +3,8 @@
 //   0.30 – 0.46  hold: the finished chess scene stays put (you earn the next one)
 //   0.46 – 0.55  chess camera tilts up into the sky
 //   0.55 – 0.67  paper plane: camera descends out of the same sky
-//   0.70 – 0.96  paper plane: she pushes it off and it flies out of frame
+//   0.70 – 1.00  paper plane: she pushes it off; the camera picks the plane up,
+//                rides with it (0.77 – 0.94), then lets it fly away into open sky
 export const scrollState = { raw: 0, eased: 0, override: -1 };
 
 if (typeof window !== "undefined") {
@@ -36,6 +37,8 @@ export function beats(g: number) {
     chessDrop: clamp01(g / 0.3),
     chessTiltUp: smooth((g - 0.46) / 0.09),
     planeIn: smooth((g - SPLIT) / 0.12), // 0 = still up in the sky, 1 = settled
-    planePush: clamp01((g - 0.7) / 0.26),
+    planePush: clamp01((g - 0.7) / 0.3),
+    planeFollow: smooth((g - 0.76) / 0.07),
+    planeLetGo: g > 0.94,
   };
 }

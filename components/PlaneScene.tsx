@@ -53,6 +53,7 @@ export type PlaneSettings = {
   zoom: number; // 1 = Blender framing
   shiftX: number;
   shiftY: number;
+  updraft: number;
   hairSway: number;
   skirtSway: number;
   grassStreaks: number;
@@ -200,6 +201,20 @@ export function PlaneScene({ settings }: { settings: PlaneSettings }) {
   }, [gltf]);
   const clipLen = useMemo(() => Math.max(0.001, ...gltf.animations.map((c) => c.duration)), [gltf]);
   const pushT = useRef(0);
+  const paper = useMemo(() => gltf.scene.getObjectByName("Paper_Plane") ?? null, [gltf]);
+  // Where the plane is the moment it leaves her hand (Blender frame 27 of 96).
+  const releasePos = useMemo(() => {
+    const v = new THREE.Vector3();
+    if (paper) {
+      mixer.setTime((26 / 95) * clipLen);
+      gltf.scene.updateMatrixWorld(true);
+      paper.getWorldPosition(v);
+      mixer.setTime(0);
+    }
+    return v;
+  }, [paper, mixer, clipLen, gltf]);
+  const follow = useRef(new THREE.Vector3());
+  const tmp = useMemo(() => new THREE.Vector3(), []);
 
   const fwd = useMemo(() => new THREE.Vector3(), []);
   const q = useMemo(() => new THREE.Quaternion(), []);
@@ -220,6 +235,13 @@ export function PlaneScene({ settings }: { settings: PlaneSettings }) {
     // Start every frame from the bind pose so the sway can never pile up.
     for (const h of hair) h.bone.quaternion.copy(h.base);
     mixer.setTime(Math.min(pushT.current * clipLen, clipLen - 1e-3));
+    // After release the plane catches an updraft, so the camera riding with it
+    // lifts her out of the bottom of the frame.
+    if (paper) {
+      const rel = 26 / 95;
+      const e = Math.max(0, (pushT.current - rel) / (1 - rel));
+      paper.position.y += settings.updraft * Math.pow(e, 1.5);
+    }
 
     // Hair: a slow wave down each chain, tips moving most.
     const ph = ((t % settings.loopSeconds) / settings.loopSeconds) * Math.PI * 2;
@@ -249,8 +271,19 @@ export function PlaneScene({ settings }: { settings: PlaneSettings }) {
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(cam.quat);
     camera.position.addScaledVector(right, settings.shiftX);
     camera.position.addScaledVector(new THREE.Vector3(0, 1, 0).applyQuaternion(cam.quat), settings.shiftY);
+    // Exit: ride along with the plane, then let it go and hold on open sky.
+    if (paper && !b.planeLetGo) {
+      gltf.scene.updateMatrixWorld(true);
+      paper.getWorldPosition(tmp);
+      tmp.sub(releasePos);
+      tmp.addScaledVector(fwd, -tmp.dot(fwd)); // stay in the picture plane
+      follow.current.copy(tmp);
+    }
+    camera.position.addScaledVector(follow.current, b.planeFollow);
+    // A little extra lift so she sinks out the bottom and the plane settles mid-frame.
     // Arrive from the sky: start a frame and a half higher, then settle.
     const up = new THREE.Vector3(0, 1, 0).applyQuaternion(cam.quat);
+    camera.position.addScaledVector(up, h * 0.45 * b.planeFollow);
     camera.position.addScaledVector(up, h * 1.6 * (1 - b.planeIn));
     camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(h / 2 / (D + 20)));
     camera.near = D - 60;
