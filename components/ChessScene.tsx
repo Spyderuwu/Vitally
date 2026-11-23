@@ -185,7 +185,7 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
       cam.rotateX(-0.035 * k);
       cam.rotateZ(0.012 * k);
     }
-    // Scroll drop: each piece eases in, overshoots a hair and settles.
+    // Scroll drop: each piece falls in and lands.
     // Start height per piece: high enough that its base sits above the top
     // of the frame for the current camera (focal length, lens bend, camera
     // move), so pieces always slide in from off screen instead of popping.
@@ -201,11 +201,9 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
       }
       const startH = Math.max(settings.dropHeight, hi + 0.5);
       const t = Math.min(1, Math.max(0, (p - d.delay) / 0.55));
-      // ease-in fall, then a small damped bounce
-      const fall = t < 0.8 ? 1 - Math.pow(t / 0.8, 2) : 0;
-      const bt = t < 0.8 ? 0 : (t - 0.8) / 0.2;
-      const bounce = t < 0.8 ? 0 : Math.sin(bt * Math.PI) * 0.04 * (1 - bt);
-      d.obj.position.y = d.baseY + startH * fall + settings.dropHeight * bounce;
+      // ease-in fall that lands cleanly (no bounce)
+      const fall = 1 - t * t;
+      d.obj.position.y = d.baseY + startH * fall;
       d.obj.rotation.y = d.spin * (1 - t) * (1 - t);
       d.obj.visible = true;
     }
