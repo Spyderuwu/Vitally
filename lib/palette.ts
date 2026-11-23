@@ -13,6 +13,7 @@ export type PaletteKey =
   | "hair"
   | "shoes"
   | "pants"
+  | "cap"
   | "briefcase"
   | "binoculars"
   | "shadow"
@@ -31,6 +32,7 @@ export const DEFAULT_PALETTE: Palette = {
   hair: "#a8a19c",
   shoes: "#efe6de",
   pants: "#f1e8df",
+  cap: "#d1e970",
   briefcase: "#4e2e1e",
   binoculars: "#2a2624",
   shadow: "#e2ecfb",
@@ -75,6 +77,7 @@ export const MATERIAL_SLOTS: Record<string, PaletteKey> = {
   MAT_Pants: "pants",
   MAT_Skin: "skin",
   MAT_Hair: "hair",
+  MAT_Cap: "cap",
   MAT_Shoes: "shoes",
   MAT_Man_Skin: "skin",
   MAT_Man_Hair: "hair",

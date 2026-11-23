@@ -63,6 +63,7 @@ export default function Studio() {
       suit: DEFAULT_PALETTE.suit,
       skin: DEFAULT_PALETTE.skin,
       hair: DEFAULT_PALETTE.hair,
+      cap: DEFAULT_PALETTE.cap,
       shoes: DEFAULT_PALETTE.shoes,
       pants: DEFAULT_PALETTE.pants,
       briefcase: DEFAULT_PALETTE.briefcase,
@@ -98,7 +99,8 @@ export default function Studio() {
     radius: { value: 3, min: 0, max: 6, step: 1, label: "brush size" },
     paper: { value: 0.06, min: 0, max: 0.3, step: 0.005, label: "paper tooth" },
     vignette: { value: 0.12, min: 0, max: 1, step: 0.01 },
-    lens: { value: 0.08, min: 0, max: 0.8, step: 0.01, label: "lens bend" },
+    focal: { value: 12, min: 8, max: 35, step: 0.5, label: "focal length (mm)" },
+    lens: { value: 0.22, min: 0, max: 0.8, step: 0.01, label: "lens bend" },
     square: { value: 1.6, min: 0.4, max: 6, step: 0.05, label: "board square (m)" },
   });
 
@@ -163,6 +165,7 @@ export default function Studio() {
     dropEnabled: drop.dropEnabled,
     dropHeight: drop.dropHeight,
     camMove: drop.dropEnabled ? drop.camMove : 0,
+    focal: paint.focal,
     dropPreview: drop.followScroll ? -1 : drop.dropPreview,
   };
 

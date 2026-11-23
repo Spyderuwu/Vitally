@@ -11,7 +11,7 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 export const MODEL_URL = `${BASE}/models/chess_scene.glb`;
 
 // Blender camera: 16mm on a 36mm-wide sensor.
-const BLENDER_HFOV = 2 * Math.atan(18 / 16);
+
 const REF_ASPECT = 1055 / 560;
 
 export type SceneSettings = {
@@ -29,11 +29,13 @@ export type SceneSettings = {
   dropHeight: number;
   dropPreview: number; // -1 = follow scroll
   camMove: number; // 0 = off, 1 = default amount
+  focal: number; // mm on a 36mm sensor
 };
 
 const camBase = { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), ready: false };
 
-function useBlenderCamera(gltfCam: THREE.Camera | undefined) {
+function useBlenderCamera(gltfCam: THREE.Camera | undefined, focal: number) {
+  const BLENDER_HFOV = 2 * Math.atan(18 / focal);
   const { camera, size } = useThree();
   useEffect(() => {
     if (!gltfCam) return;
@@ -58,7 +60,7 @@ function useBlenderCamera(gltfCam: THREE.Camera | undefined) {
     cam.near = 0.1;
     cam.far = 1000;
     cam.updateProjectionMatrix();
-  }, [gltfCam, camera, size]);
+  }, [gltfCam, camera, size, focal]);
 }
 
 export function ChessScene({ settings }: { settings: SceneSettings }) {
@@ -116,7 +118,7 @@ export function ChessScene({ settings }: { settings: SceneSettings }) {
 
   const boardMat = useMemo(() => makePainterly("#ffffff", { board: true }), []);
   const gltfCam = useMemo(() => gltf.cameras?.[0], [gltf]);
-  useBlenderCamera(gltfCam);
+  useBlenderCamera(gltfCam, settings.focal);
 
   // Bones for the idle loop (GLTFLoader strips ":" from Mixamo names).
   const idle = useMemo(() => {
